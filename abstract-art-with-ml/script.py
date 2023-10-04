@@ -8,6 +8,7 @@
 # Specify a seed via cli argument --seed 349348
 # Specify `--save --path folder/` to save the images
 
+import pickle
 import os
 import time
 import math 
@@ -141,8 +142,23 @@ if __name__ == "__main__":
 
         variance = args.variance or np.random.uniform(50, 150)
         lat = np.random.normal(0,1,1)
-        model = build_model(len(params), variance, bw = args.bw)
 
+        # try to load existing model
+        try:
+            with open('model.pickle', 'rb') as f:
+                model = pickle.load(f)
+        except:
+            model = build_model(len(params), variance, bw = args.bw)
+            with open('model.pickle', 'wb') as f:
+                pickle.dump(model, f) 
+        
+        # if previous run failed, resume from last generated frame 
+        try:
+            with open('previous.pickle', 'rb') as f2:
+                previous = pickle.load(f2)
+        except:
+            previous = 0
+            
         for j in tqdm(range(args.series), leave=False):
             params = create_grid((args.x, args.y), lat + 2 * j / args.series, 1.0)
             image = create_image(model, params, (args.x, args.y))
